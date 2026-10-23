@@ -9,4 +9,9 @@
     <string name="choice_mode_multiple">Mehrfachauswahl</string>
     <string name="open_image">Bild öffnen</string>
     <string name="back">Zurück</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="load_failed_offline">Du bist offline. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="load_failed_unavailable">Bei uns ist etwas schiefgelaufen. Versuche es später erneut.</string>
+    <string name="saved_data_offline">Du bist offline. Gespeicherte Daten werden angezeigt.</string>
+    <string name="saved_data_unavailable">Aktualisierung fehlgeschlagen. Gespeicherte Daten werden angezeigt.</string>
 </resources>

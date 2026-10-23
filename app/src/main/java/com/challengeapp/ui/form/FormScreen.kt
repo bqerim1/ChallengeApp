@@ -16,15 +16,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,11 +41,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +58,7 @@ import com.challengeapp.R
 import com.challengeapp.domain.model.ChoiceQuestion
 import com.challengeapp.domain.model.ImageQuestion
 import com.challengeapp.domain.model.Page
+import com.challengeapp.domain.model.RefreshError
 import com.challengeapp.domain.model.Response
 import com.challengeapp.domain.model.Section
 import com.challengeapp.domain.model.TextQuestion
@@ -58,38 +70,109 @@ fun FormScreen(
     viewModel: FormViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    FormContent(state, onResponseClick = viewModel::onResponseClick, onImageClick = onImageClick)
+    FormContent(
+        state = state,
+        onRefresh = viewModel::refresh,
+        onSnackbarShown = viewModel::onSnackbarShown,
+        onResponseClick = viewModel::onResponseClick,
+        onImageClick = onImageClick,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormContent(
     state: FormUiState,
+    onRefresh: () -> Unit,
+    onSnackbarShown: () -> Unit,
     onResponseClick: (ChoiceQuestion, Long) -> Unit,
     onImageClick: (ImageQuestion) -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val retryLabel = stringResource(R.string.retry)
+    val currentOnRefresh by rememberUpdatedState(onRefresh)
+    val currentOnSnackbarShown by rememberUpdatedState(onSnackbarShown)
+    val savedDataMessage = when (state.snackbarError?.takeIf { state.rows.isNotEmpty() }) {
+        RefreshError.Offline -> stringResource(R.string.saved_data_offline)
+        RefreshError.Unavailable -> stringResource(R.string.saved_data_unavailable)
+        null -> null
+    }
+    LaunchedEffect(savedDataMessage) {
+        if (savedDataMessage != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = savedDataMessage,
+                actionLabel = retryLabel,
+                withDismissAction = true,
+                duration = SnackbarDuration.Long,
+            )
+            currentOnSnackbarShown()
+            if (result == SnackbarResult.ActionPerformed) currentOnRefresh()
+        }
+    }
+
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        if (state.rows.isEmpty() && state.isRefreshing) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                val loadingDescription = stringResource(R.string.loading_form)
-                CircularProgressIndicator(Modifier.semantics { contentDescription = loadingDescription })
+        when {
+            state.rows.isEmpty() && state.isRefreshing -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    val loadingDescription = stringResource(R.string.loading_form)
+                    CircularProgressIndicator(Modifier.semantics { contentDescription = loadingDescription })
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = padding.calculateTopPadding(),
-                    bottom = padding.calculateBottomPadding() + 24.dp,
-                ),
-            ) {
-                items(
-                    items = state.rows,
-                    key = { it.item.id },
-                    contentType = { it.item::class },
-                ) { row -> FormRowItem(row, onResponseClick, onImageClick) }
+            state.rows.isEmpty() && state.refreshError != null -> {
+                ErrorState(state.refreshError, onRetry = onRefresh, modifier = Modifier.padding(padding))
             }
+            else -> {
+                PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = padding.calculateTopPadding()),
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
+                    ) {
+                        items(
+                            items = state.rows,
+                            key = { it.item.id },
+                            contentType = { it.item::class },
+                        ) { row -> FormRowItem(row, onResponseClick, onImageClick) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorState(
+    error: RefreshError,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(
+                when (error) {
+                    RefreshError.Offline -> R.string.load_failed_offline
+                    RefreshError.Unavailable -> R.string.load_failed_unavailable
+                },
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onRetry) {
+            Text(stringResource(R.string.retry))
         }
     }
 }
@@ -176,6 +259,7 @@ private fun ImageQuestionItem(
         AsyncImage(
             model = item.src,
             contentDescription = item.title,
+            error = painterResource(R.drawable.ic_broken_image),
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .size(120.dp)
@@ -250,6 +334,12 @@ private fun FormContentPreview() {
         ),
     )
     ChallengeAppTheme {
-        FormContent(FormUiState(rows = pages.toRows(mapOf(6L to setOf(7L)))), onResponseClick = { _, _ -> }, onImageClick = {})
+        FormContent(
+            state = FormUiState(rows = pages.toRows(mapOf(6L to setOf(7L)))),
+            onRefresh = {},
+            onSnackbarShown = {},
+            onResponseClick = { _, _ -> },
+            onImageClick = {},
+        )
     }
 }

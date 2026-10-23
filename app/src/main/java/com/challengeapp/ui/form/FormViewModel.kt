@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.challengeapp.domain.model.ChoiceQuestion
+import com.challengeapp.domain.model.RefreshError
 import com.challengeapp.domain.repository.FormRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,8 @@ import javax.inject.Inject
 data class FormUiState(
     val rows: List<FormRow> = emptyList(),
     val isRefreshing: Boolean = false,
+    val refreshError: RefreshError? = null,
+    val snackbarError: RefreshError? = null,
 )
 
 @HiltViewModel
@@ -27,11 +30,19 @@ class FormViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val isRefreshing = MutableStateFlow(false)
+    private val refreshError = MutableStateFlow<RefreshError?>(null)
+    private val snackbarError = MutableStateFlow<RefreshError?>(null)
     private val selections = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
 
     val uiState: StateFlow<FormUiState> =
-        combine(repository.observePages(), selections, isRefreshing) { pages, selected, refreshing ->
-            FormUiState(pages.toRows(selected), refreshing)
+        combine(
+            repository.observePages(),
+            selections,
+            isRefreshing,
+            refreshError,
+            snackbarError,
+        ) { pages, selected, refreshing, error, snackbar ->
+            FormUiState(pages.toRows(selected), refreshing, error, snackbar)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FormUiState(isRefreshing = true))
 
     init {
@@ -39,11 +50,21 @@ class FormViewModel @Inject constructor(
     }
 
     fun refresh() {
+        if (isRefreshing.value) return
+        isRefreshing.value = true
+        refreshError.value = null
+        snackbarError.value = null
         viewModelScope.launch {
-            isRefreshing.value = true
-            repository.refresh()
+            val error = repository.refresh()
+            refreshError.value = error
+            snackbarError.value = error
             isRefreshing.value = false
         }
+    }
+
+    // Cleared once shown so returning to the screen or rotating doesn't show it again.
+    fun onSnackbarShown() {
+        snackbarError.value = null
     }
 
     // Tapping a selected response clears it, so single-select questions can go back to none.

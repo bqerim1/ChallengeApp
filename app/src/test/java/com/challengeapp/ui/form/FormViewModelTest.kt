@@ -3,6 +3,7 @@ package com.challengeapp.ui.form
 import com.challengeapp.MainDispatcherRule
 import com.challengeapp.domain.model.ChoiceQuestion
 import com.challengeapp.domain.model.Page
+import com.challengeapp.domain.model.RefreshError
 import com.challengeapp.domain.model.Response
 import com.challengeapp.domain.repository.FormRepository
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,14 +75,45 @@ class FormViewModelTest {
         assertEquals(emptySet<Long>(), selectedFor(multi))
     }
 
+    @Test
+    fun `refresh error is reported and cleared by a successful retry`() = runTest {
+        val repository = FakeFormRepository(emptyList(), RefreshError.Offline)
+        val viewModel = FormViewModel(repository)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        assertEquals(RefreshError.Offline, viewModel.uiState.value.refreshError)
+        assertFalse(viewModel.uiState.value.isRefreshing)
+
+        repository.refreshError = null
+        viewModel.refresh()
+
+        assertNull(viewModel.uiState.value.refreshError)
+    }
+
+    @Test
+    fun `snackbar error is shown once and the refresh error stays`() = runTest {
+        val viewModel = FormViewModel(FakeFormRepository(emptyList(), RefreshError.Unavailable))
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        assertEquals(RefreshError.Unavailable, viewModel.uiState.value.snackbarError)
+
+        viewModel.onSnackbarShown()
+
+        assertNull(viewModel.uiState.value.snackbarError)
+        assertEquals(RefreshError.Unavailable, viewModel.uiState.value.refreshError)
+    }
+
     private fun selectedFor(question: ChoiceQuestion): Set<Long> =
         viewModel.uiState.value.rows.single { it.item.id == question.id }.selectedResponseIds
 
     private fun responses(vararg ids: Long) = ids.map { Response(it, "Response $it", null) }
 }
 
-private class FakeFormRepository(private val pages: List<Page>) : FormRepository {
+private class FakeFormRepository(
+    private val pages: List<Page>,
+    var refreshError: RefreshError? = null,
+) : FormRepository {
     override fun observePages(): Flow<List<Page>> = flowOf(pages)
 
-    override suspend fun refresh(): Result<Unit> = Result.success(Unit)
+    override suspend fun refresh(): RefreshError? = refreshError
 }

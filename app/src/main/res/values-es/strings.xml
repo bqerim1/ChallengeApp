@@ -10,4 +10,9 @@
     <string name="choice_mode_multiple">opción múltiple</string>
     <string name="open_image">Abrir imagen</string>
     <string name="back">Atrás</string>
+    <string name="retry">Reintentar</string>
+    <string name="load_failed_offline">Estás sin conexión. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="load_failed_unavailable">Algo salió mal por nuestra parte. Inténtalo más tarde.</string>
+    <string name="saved_data_offline">Estás sin conexión. Mostrando datos guardados.</string>
+    <string name="saved_data_unavailable">No se pudo actualizar. Mostrando datos guardados.</string>
 </resources>

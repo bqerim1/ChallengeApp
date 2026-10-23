@@ -10,4 +10,9 @@
     <string name="choice_mode_multiple">choix multiple</string>
     <string name="open_image">Ouvrir l’image</string>
     <string name="back">Retour</string>
+    <string name="retry">Réessayer</string>
+    <string name="load_failed_offline">Vous êtes hors ligne. Vérifiez votre connexion et réessayez.</string>
+    <string name="load_failed_unavailable">Un problème est survenu de notre côté. Réessayez plus tard.</string>
+    <string name="saved_data_offline">Vous êtes hors ligne. Affichage des données enregistrées.</string>
+    <string name="saved_data_unavailable">Actualisation impossible. Affichage des données enregistrées.</string>
 </resources>

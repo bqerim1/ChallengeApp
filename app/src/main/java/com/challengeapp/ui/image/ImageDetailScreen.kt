@@ -42,6 +42,7 @@ fun ImageDetailScreen(
         AsyncImage(
             model = src,
             contentDescription = title,
+            error = painterResource(R.drawable.ic_broken_image),
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .padding(padding)

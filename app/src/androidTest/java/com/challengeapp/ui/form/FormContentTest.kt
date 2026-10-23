@@ -1,5 +1,6 @@
 package com.challengeapp.ui.form
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -8,9 +9,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.challengeapp.domain.model.ChoiceQuestion
 import com.challengeapp.domain.model.ImageQuestion
 import com.challengeapp.domain.model.Page
+import com.challengeapp.domain.model.RefreshError
 import com.challengeapp.domain.model.Response
 import com.challengeapp.ui.theme.ChallengeAppTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,13 +48,40 @@ class FormContentTest {
         assertEquals(3L to 30L, tapped)
     }
 
+    @Test
+    fun offlineWithoutSavedDataShowsRetry() {
+        var retried = false
+        setContent(state = FormUiState(refreshError = RefreshError.Offline), onRefresh = { retried = true })
+
+        composeRule.onNodeWithText("You're offline. Check your connection and try again.").assertIsDisplayed()
+        composeRule.onNodeWithText("Retry").performClick()
+
+        assertTrue(retried)
+    }
+
+    @Test
+    fun serverErrorWithSavedDataKeepsTheFormVisible() {
+        setContent(state = FormUiState(rows = rows, refreshError = RefreshError.Unavailable, snackbarError = RefreshError.Unavailable))
+
+        composeRule.onNodeWithText("Main Page").assertIsDisplayed()
+        composeRule.onNodeWithText("Couldn't refresh. Showing saved data.").assertIsDisplayed()
+    }
+
     private fun setContent(
+        state: FormUiState = FormUiState(rows = rows),
+        onRefresh: () -> Unit = {},
         onResponseClick: (ChoiceQuestion, Long) -> Unit = { _, _ -> },
         onImageClick: (ImageQuestion) -> Unit = {},
     ) {
         composeRule.setContent {
             ChallengeAppTheme {
-                FormContent(FormUiState(rows = rows), onResponseClick, onImageClick)
+                FormContent(
+                    state = state,
+                    onRefresh = onRefresh,
+                    onSnackbarShown = {},
+                    onResponseClick = onResponseClick,
+                    onImageClick = onImageClick,
+                )
             }
         }
     }

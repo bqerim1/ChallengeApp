@@ -9,4 +9,9 @@
     <string name="choice_mode_multiple">zgjedhje e shumëfishtë</string>
     <string name="open_image">Hap imazhin</string>
     <string name="back">Kthehu</string>
+    <string name="retry">Provo përsëri</string>
+    <string name="load_failed_offline">Je offline. Kontrollo lidhjen dhe provo përsëri.</string>
+    <string name="load_failed_unavailable">Diçka shkoi keq nga ana jonë. Provo më vonë.</string>
+    <string name="saved_data_offline">Je offline. Po shfaqen të dhënat e ruajtura.</string>
+    <string name="saved_data_unavailable">Rifreskimi dështoi. Po shfaqen të dhënat e ruajtura.</string>
 </resources>
