@@ -8,4 +8,6 @@
     </plurals>
     <string name="choice_mode_single">choix unique</string>
     <string name="choice_mode_multiple">choix multiple</string>
+    <string name="open_image">Ouvrir l’image</string>
+    <string name="back">Retour</string>
 </resources>

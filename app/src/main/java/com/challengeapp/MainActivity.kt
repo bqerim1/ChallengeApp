@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.challengeapp.ui.form.FormScreen
+import com.challengeapp.ui.navigation.AppNavHost
 import com.challengeapp.ui.theme.ChallengeAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChallengeAppTheme {
-                FormScreen()
+                AppNavHost()
             }
         }
     }

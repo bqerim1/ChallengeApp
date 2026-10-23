@@ -10,4 +10,6 @@
     </plurals>
     <string name="choice_mode_single">single choice</string>
     <string name="choice_mode_multiple">multiple choice</string>
+    <string name="open_image">Open image</string>
+    <string name="back">Back</string>
 </resources>

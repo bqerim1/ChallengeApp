@@ -7,4 +7,6 @@
     </plurals>
     <string name="choice_mode_single">Einfachauswahl</string>
     <string name="choice_mode_multiple">Mehrfachauswahl</string>
+    <string name="open_image">Bild öffnen</string>
+    <string name="back">Zurück</string>
 </resources>

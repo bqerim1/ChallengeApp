@@ -2,6 +2,7 @@ package com.challengeapp.ui.form
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,9 +53,12 @@ import com.challengeapp.domain.model.TextQuestion
 import com.challengeapp.ui.theme.ChallengeAppTheme
 
 @Composable
-fun FormScreen(viewModel: FormViewModel = hiltViewModel()) {
+fun FormScreen(
+    onImageClick: (ImageQuestion) -> Unit,
+    viewModel: FormViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    FormContent(state, onResponseClick = viewModel::onResponseClick)
+    FormContent(state, onResponseClick = viewModel::onResponseClick, onImageClick = onImageClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +66,7 @@ fun FormScreen(viewModel: FormViewModel = hiltViewModel()) {
 fun FormContent(
     state: FormUiState,
     onResponseClick: (ChoiceQuestion, Long) -> Unit,
+    onImageClick: (ImageQuestion) -> Unit,
 ) {
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
@@ -83,7 +88,7 @@ fun FormContent(
                     items = state.rows,
                     key = { it.item.id },
                     contentType = { it.item::class },
-                ) { row -> FormRowItem(row, onResponseClick) }
+                ) { row -> FormRowItem(row, onResponseClick, onImageClick) }
             }
         }
     }
@@ -93,6 +98,7 @@ fun FormContent(
 private fun FormRowItem(
     row: FormRow,
     onResponseClick: (ChoiceQuestion, Long) -> Unit,
+    onImageClick: (ImageQuestion) -> Unit,
 ) {
     val item = row.item
     val barColor = MaterialTheme.colorScheme.tertiary
@@ -117,7 +123,7 @@ private fun FormRowItem(
                 MaterialTheme.colorScheme.primary,
             )
             is TextQuestion -> Title(item.content, item.id, questionStyle())
-            is ImageQuestion -> ImageQuestionItem(item)
+            is ImageQuestion -> ImageQuestionItem(item, onImageClick)
             is ChoiceQuestion -> ChoiceQuestionItem(item, row.selectedResponseIds, onResponseClick)
         }
     }
@@ -162,7 +168,10 @@ private fun IdBadge(id: Long) {
 }
 
 @Composable
-private fun ImageQuestionItem(item: ImageQuestion) {
+private fun ImageQuestionItem(
+    item: ImageQuestion,
+    onImageClick: (ImageQuestion) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AsyncImage(
             model = item.src,
@@ -173,7 +182,8 @@ private fun ImageQuestionItem(item: ImageQuestion) {
                 .clip(RoundedCornerShape(8.dp))
                 // Logos in the form are transparent PNGs, often dark, so give them a light backing.
                 .background(Color.White)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                .clickable(onClickLabel = stringResource(R.string.open_image)) { onImageClick(item) },
         )
         Title(item.title, item.id, questionStyle(), MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -240,6 +250,6 @@ private fun FormContentPreview() {
         ),
     )
     ChallengeAppTheme {
-        FormContent(FormUiState(rows = pages.toRows(mapOf(6L to setOf(7L)))), onResponseClick = { _, _ -> })
+        FormContent(FormUiState(rows = pages.toRows(mapOf(6L to setOf(7L)))), onResponseClick = { _, _ -> }, onImageClick = {})
     }
 }

@@ -7,4 +7,6 @@
     </plurals>
     <string name="choice_mode_single">zgjedhje e vetme</string>
     <string name="choice_mode_multiple">zgjedhje e shumëfishtë</string>
+    <string name="open_image">Hap imazhin</string>
+    <string name="back">Kthehu</string>
 </resources>
