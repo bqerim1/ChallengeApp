@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">ChallengeApp</string>
+    <string name="app_name" translatable="false">ChallengeApp</string>
+    <string name="item_id" translatable="false">#%1$d</string>
+    <string name="loading_form">Loading form</string>
 </resources>
