@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,12 +54,15 @@ import com.challengeapp.ui.theme.ChallengeAppTheme
 @Composable
 fun FormScreen(viewModel: FormViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    FormContent(state)
+    FormContent(state, onResponseClick = viewModel::onResponseClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormContent(state: FormUiState) {
+fun FormContent(
+    state: FormUiState,
+    onResponseClick: (ChoiceQuestion, Long) -> Unit,
+) {
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
     ) { padding ->
@@ -69,20 +74,26 @@ fun FormContent(state: FormUiState) {
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = padding,
+                contentPadding = PaddingValues(
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding() + 24.dp,
+                ),
             ) {
                 items(
                     items = state.rows,
                     key = { it.item.id },
                     contentType = { it.item::class },
-                ) { row -> FormRowItem(row) }
+                ) { row -> FormRowItem(row, onResponseClick) }
             }
         }
     }
 }
 
 @Composable
-private fun FormRowItem(row: FormRow) {
+private fun FormRowItem(
+    row: FormRow,
+    onResponseClick: (ChoiceQuestion, Long) -> Unit,
+) {
     val item = row.item
     val barColor = MaterialTheme.colorScheme.tertiary
     Column(
@@ -107,7 +118,7 @@ private fun FormRowItem(row: FormRow) {
             )
             is TextQuestion -> Title(item.content, item.id, questionStyle())
             is ImageQuestion -> ImageQuestionItem(item)
-            is ChoiceQuestion -> ChoiceQuestionItem(item)
+            is ChoiceQuestion -> ChoiceQuestionItem(item, row.selectedResponseIds, onResponseClick)
         }
     }
 }
@@ -169,18 +180,36 @@ private fun ImageQuestionItem(item: ImageQuestion) {
 }
 
 @Composable
-private fun ChoiceQuestionItem(item: ChoiceQuestion) {
+private fun ChoiceQuestionItem(
+    item: ChoiceQuestion,
+    selectedResponseIds: Set<Long>,
+    onResponseClick: (ChoiceQuestion, Long) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Title(item.content, item.id, questionStyle())
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item.responses.forEach { response ->
                 FilterChip(
-                    selected = false,
-                    onClick = {},
+                    selected = response.id in selectedResponseIds,
+                    onClick = { onResponseClick(item, response.id) },
                     label = { ResponseLabel(response) },
                 )
             }
         }
+        val count = selectedResponseIds.size
+        val selection = if (count == 0) {
+            stringResource(R.string.choice_none_selected)
+        } else {
+            pluralStringResource(R.plurals.choice_selected_count, count, count)
+        }
+        val mode = stringResource(
+            if (item.multipleSelection) R.string.choice_mode_multiple else R.string.choice_mode_single,
+        )
+        Text(
+            text = stringResource(R.string.choice_hint, selection, mode),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -211,6 +240,6 @@ private fun FormContentPreview() {
         ),
     )
     ChallengeAppTheme {
-        FormContent(FormUiState(rows = pages.toRows()))
+        FormContent(FormUiState(rows = pages.toRows(mapOf(6L to setOf(7L)))), onResponseClick = { _, _ -> })
     }
 }

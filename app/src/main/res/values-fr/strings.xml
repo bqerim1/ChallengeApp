@@ -1,3 +1,11 @@
 <resources>
     <string name="loading_form">Chargement du formulaire</string>
+    <string name="choice_none_selected">Aucune sélectionnée</string>
+    <plurals name="choice_selected_count">
+        <item quantity="one">%d sélectionnée</item>
+        <item quantity="many">%d sélectionnées</item>
+        <item quantity="other">%d sélectionnées</item>
+    </plurals>
+    <string name="choice_mode_single">choix unique</string>
+    <string name="choice_mode_multiple">choix multiple</string>
 </resources>

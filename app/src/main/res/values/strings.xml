@@ -2,4 +2,12 @@
     <string name="app_name" translatable="false">ChallengeApp</string>
     <string name="item_id" translatable="false">#%1$d</string>
     <string name="loading_form">Loading form</string>
+    <string name="choice_hint" translatable="false">%1$s · %2$s</string>
+    <string name="choice_none_selected">None selected</string>
+    <plurals name="choice_selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="choice_mode_single">single choice</string>
+    <string name="choice_mode_multiple">multiple choice</string>
 </resources>
