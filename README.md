@@ -5,6 +5,10 @@ hierarchy. It works offline and handles poor connections.
 
 Built with Kotlin, Jetpack Compose, Hilt, Room, Retrofit, Coil and Navigation Compose.
 
+| Form hierarchy | Choice questions | Image detail |
+|---|---|---|
+| <img src="docs/screenshots/form.png" width="240" alt="Form hierarchy"> | <img src="docs/screenshots/choices.png" width="240" alt="Choice questions"> | <img src="docs/screenshots/image-detail.png" width="240" alt="Image detail"> |
+
 ## Features
 
 - **Hierarchy:** pages, nested sections and questions, with font size and indent by depth.
